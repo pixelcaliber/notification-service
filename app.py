@@ -1,5 +1,5 @@
 from threading import Thread
-
+import logging
 from confluent_kafka import Consumer, KafkaError, Producer
 from flask import Flask, json, jsonify, render_template, request
 from flask_socketio import SocketIO
@@ -7,10 +7,11 @@ from flask_socketio import SocketIO
 app = Flask(__name__)
 socketio = SocketIO(app)
 
+logging.basicConfig(level=logging.INFO)
 
 @socketio.on("connect")
 def handle_connect():
-    print("Client Connected")
+    logging.info("Client Connected")
 
 
 consumer_config = {
@@ -33,7 +34,7 @@ def kafka_consumer():
             if msg.error().code() == KafkaError._PARTITION_EOF:
                 continue
             else:
-                print(msg.error())
+                logging.info(msg.error())
                 break
 
         # Log received message
@@ -42,7 +43,7 @@ def kafka_consumer():
 
         kafka_message_dict = json.loads(kafka_message)
 
-        print("Received Kafka message:", kafka_message_dict)
+        logging.info(f"Received Kafka message:{kafka_message_dict}")
 
         # Emit message to WebSocket clients
         socketio.emit("new_message", kafka_message_dict)
@@ -88,5 +89,5 @@ if __name__ == "__main__":
 #             return jsonify({'status': 'error', 'message': 'Invalid request format'}), 400
 
 #     except Exception as e:
-#         print(f"Error sending message: {e}")
+#         logging.info(f"Error sending message: {e}")
 #         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
